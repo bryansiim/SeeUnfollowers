@@ -88,23 +88,22 @@ export default function NotFollowingBack() {
         </p>
       </header>
 
-      <div className="toolbar fade-up fade-up--2">
-        <div className="field">
-          <input
-            type="text"
-            placeholder="filtrar por username…"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          />
-        </div>
-        <span className="results-meta">
-          captura #{data.snapshot_id}
-          <span className="arrow">·</span>
-          {new Date(data.taken_at).toLocaleString("pt-BR")}
-        </span>
-      </div>
-
       <div className="card fade-up fade-up--3">
+        <div className="toolbar toolbar--embedded">
+          <div className="field">
+            <input
+              type="text"
+              placeholder="filtrar por username…"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+          </div>
+          <span className="results-meta">
+            captura #{data.snapshot_id}
+            <span className="arrow">·</span>
+            {new Date(data.taken_at).toLocaleString("pt-BR")}
+          </span>
+        </div>
         {data.count === 0 ? (
           <div className="empty">
             <span className="empty__mark">✓</span>
@@ -122,10 +121,10 @@ export default function NotFollowingBack() {
           </div>
         ) : (
           <div className="table-wrap">
-            <table>
+            <table className="table--compact">
               <thead>
                 <tr>
-                  <th style={{ width: "1%" }}>№</th>
+                  <th className="col-shrink">№</th>
                   <th>Username</th>
                   <th className="cell--right">
                     <span className="results-meta">
@@ -152,7 +151,8 @@ export default function NotFollowingBack() {
                         rel="noreferrer"
                         className="btn btn--ghost btn--small"
                       >
-                        Abrir <span className="btn__arrow">↗</span>
+                        <span className="btn__label">Abrir </span>
+                        <span className="btn__arrow">↗</span>
                       </a>
                     </td>
                   </tr>

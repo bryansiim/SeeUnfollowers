@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { listSnapshots } from "../db.js";
+import { deleteSnapshot, listSnapshots } from "../db.js";
 import ErrorAlert from "../components/ErrorAlert.jsx";
 
 export default function Snapshots() {
   const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     listSnapshots()
@@ -15,6 +16,22 @@ export default function Snapshots() {
       .catch(setError)
       .finally(() => setLoading(false));
   }, []);
+
+  async function handleDelete(snap) {
+    const when = new Date(snap.takenAt).toLocaleString("pt-BR");
+    if (!window.confirm(`Apagar a captura #${snap.id} (${when})?\n\nOs dados desta captura serão removidos do seu navegador.`)) {
+      return;
+    }
+    setDeletingId(snap.id);
+    try {
+      await deleteSnapshot(snap.id);
+      setItems((prev) => prev.filter((s) => s.id !== snap.id));
+    } catch (e) {
+      setError(e);
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   if (loading) {
     return (
@@ -43,9 +60,9 @@ export default function Snapshots() {
         </p>
       </header>
 
-      <div className="toolbar fade-up fade-up--2" style={{ justifyContent: "flex-end" }}>
+      <div className="fade-up fade-up--2 row--end">
         <Link to="/upload" className="btn">
-          Subir novo <span className="btn__arrow">→</span>
+          Subir nova <span className="btn__arrow">→</span>
         </Link>
       </div>
 
@@ -60,19 +77,20 @@ export default function Snapshots() {
               Comece subindo seu primeiro export do Instagram.
             </p>
             <Link to="/upload" className="btn">
-              Subir primeira captura <span className="btn__arrow">→</span>
+              Subir nova captura <span className="btn__arrow">→</span>
             </Link>
           </div>
         ) : (
           <div className="table-wrap">
-            <table>
+            <table className="table--stack-mobile">
               <thead>
                 <tr>
-                  <th style={{ width: "1%" }}>№</th>
+                  <th className="col-shrink">№</th>
                   <th>Data</th>
                   <th>Arquivo</th>
-                  <th style={{ textAlign: "right" }}>Seguidores</th>
-                  <th style={{ textAlign: "right" }}>Seguindo</th>
+                  <th className="cell--right">Seguidores</th>
+                  <th className="cell--right">Seguindo</th>
+                  <th className="col-shrink"></th>
                 </tr>
               </thead>
               <tbody>
@@ -81,16 +99,34 @@ export default function Snapshots() {
                     <td className="cell--num">
                       <span className="cell-row-index">#{s.id}</span>
                     </td>
-                    <td>
-                      <span className="mono" style={{ fontSize: "0.86rem" }}>
+                    <td data-label="data">
+                      <span className="mono col-meta">
                         {new Date(s.takenAt).toLocaleString("pt-BR")}
                       </span>
                     </td>
-                    <td className="muted mono" style={{ fontSize: "0.8rem" }}>
+                    <td className="muted mono col-meta--xs" data-label="arquivo">
                       {s.sourceZipName}
                     </td>
-                    <td className="cell--right mono">{fmt(s.followersCount)}</td>
-                    <td className="cell--right mono">{fmt(s.followingCount)}</td>
+                    <td className="cell--right mono" data-label="seguidores">{fmt(s.followersCount)}</td>
+                    <td className="cell--right mono" data-label="seguindo">{fmt(s.followingCount)}</td>
+                    <td className="cell--right" data-label="ação">
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--icon btn--danger"
+                        onClick={() => handleDelete(s)}
+                        disabled={deletingId === s.id}
+                        aria-label={`Apagar captura #${s.id}`}
+                        title="Apagar esta captura"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M3 6h18" />
+                          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                          <path d="M10 11v6" />
+                          <path d="M14 11v6" />
+                        </svg>
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

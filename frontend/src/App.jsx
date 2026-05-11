@@ -48,7 +48,7 @@ export default function App() {
       </main>
 
       <footer className="footer">
-        Privado · roda <em>local</em> · seus dados não saem da máquina
+        Tudo roda no seu <em>navegador</em> · seus dados não saem daqui
       </footer>
     </div>
   );

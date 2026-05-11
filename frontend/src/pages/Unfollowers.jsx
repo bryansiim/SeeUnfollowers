@@ -101,46 +101,8 @@ export default function Unfollowers() {
         </p>
       </header>
 
-      <div className="toolbar fade-up fade-up--2">
-        <div className="field">
-          <span className="field__label">Comparar com</span>
-          <select value={since} onChange={(e) => setSince(e.target.value)}>
-            <option value="">Captura anterior</option>
-            {snapshots.slice(1).map((s) => (
-              <option key={s.id} value={s.id}>
-                #{s.id} · {new Date(s.takenAt).toLocaleString("pt-BR")}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="toolbar__divider" />
-        <div className="field">
-          <input
-            type="text"
-            placeholder="filtrar por username…"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          />
-        </div>
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={onlyStillFollowing}
-            onChange={(e) => setOnlyStillFollowing(e.target.checked)}
-          />
-          Só os que ainda sigo
-        </label>
-        {data && (
-          <span className="results-meta">
-            <strong>{items.length}</strong> de {data.count}
-            <span className="arrow">·</span>
-            #{data.from_snapshot_id}<span className="arrow">→</span>#{data.to_snapshot_id}
-          </span>
-        )}
-      </div>
-
       {data && data.count > 0 && (
-        <div className="stats fade-up fade-up--3" style={{ marginTop: 0 }}>
+        <div className="stats fade-up fade-up--2">
           <div className="stat stat--accent">
             <div className="stat__label">Total de unfollows</div>
             <div className="stat__value">{data.count}</div>
@@ -159,6 +121,43 @@ export default function Unfollowers() {
       {error && <ErrorAlert error={error} onDismiss={() => setError(null)} />}
 
       <div className="card fade-up fade-up--3">
+        <div className="toolbar toolbar--embedded">
+          <div className="field">
+            <span className="field__label">Comparar com</span>
+            <select value={since} onChange={(e) => setSince(e.target.value)}>
+              <option value="">Última captura</option>
+              {snapshots.slice(1).map((s) => (
+                <option key={s.id} value={s.id}>
+                  #{s.id} · {new Date(s.takenAt).toLocaleString("pt-BR")}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="toolbar__divider" />
+          <div className="field">
+            <input
+              type="text"
+              placeholder="filtrar por username…"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+          </div>
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={onlyStillFollowing}
+              onChange={(e) => setOnlyStillFollowing(e.target.checked)}
+            />
+            Só os que ainda sigo
+          </label>
+          {data && (
+            <span className="results-meta">
+              <strong>{items.length}</strong> de {data.count}
+              <span className="arrow">·</span>
+              #{data.from_snapshot_id}<span className="arrow">→</span>#{data.to_snapshot_id}
+            </span>
+          )}
+        </div>
         {loading ? (
           <p className="loading">Carregando </p>
         ) : !data || data.count === 0 ? (
@@ -181,10 +180,10 @@ export default function Unfollowers() {
           </div>
         ) : (
           <div className="table-wrap">
-            <table>
+            <table className="table--compact">
               <thead>
                 <tr>
-                  <th style={{ width: "1%" }}>№</th>
+                  <th className="col-shrink">№</th>
                   <th>Username</th>
                   <th>Status</th>
                   <th></th>
@@ -215,7 +214,8 @@ export default function Unfollowers() {
                         rel="noreferrer"
                         className="btn btn--ghost btn--small"
                       >
-                        Abrir <span className="btn__arrow">↗</span>
+                        <span className="btn__label">Abrir </span>
+                        <span className="btn__arrow">↗</span>
                       </a>
                     </td>
                   </tr>

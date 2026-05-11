@@ -1,11 +1,17 @@
 FROM node:20-alpine AS build
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm install
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
 COPY . .
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
-FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+FROM node:20-alpine
+RUN npm install -g serve
+WORKDIR /app
+COPY --from=build /app/dist .
+EXPOSE 3000
+CMD ["serve", "-s", ".", "-l", "3000"]

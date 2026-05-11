@@ -1,14 +1,9 @@
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { parseZip } from "../api.js";
-import {
-  computeUnfollowers,
-  createSnapshot,
-  listSnapshots,
-} from "../db.js";
-import UserLink from "../components/UserCard.jsx";
+import { createSnapshot, listSnapshots } from "../db.js";
 import ErrorAlert from "../components/ErrorAlert.jsx";
 
 const FAQ = [
@@ -86,34 +81,27 @@ const FAQ = [
 export default function Upload() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  const [result, setResult] = useState(null);
+  const navigate = useNavigate();
 
-  const onDrop = useCallback(async (files) => {
-    if (!files.length) return;
-    setBusy(true);
-    setError(null);
-    setResult(null);
-    try {
-      const parsed = await parseZip(files[0]);
-      const snap = await createSnapshot(parsed);
-      const all = await listSnapshots();
-      const previous = all.find((s) => s.id !== snap.id);
-      const newUnfollowers = previous
-        ? await computeUnfollowers(previous.id, snap.id)
-        : [];
-      setResult({
-        snapshot_id: snap.id,
-        followers: snap.followersCount,
-        following: snap.followingCount,
-        previous_snapshot_id: previous?.id ?? null,
-        new_unfollowers: newUnfollowers,
-      });
-    } catch (e) {
-      setError(e);
-    } finally {
-      setBusy(false);
-    }
-  }, []);
+  const onDrop = useCallback(
+    async (files) => {
+      if (!files.length) return;
+      setBusy(true);
+      setError(null);
+      try {
+        const parsed = await parseZip(files[0]);
+        const snap = await createSnapshot(parsed);
+        const all = await listSnapshots();
+        const hasPrevious = all.some((s) => s.id !== snap.id);
+        navigate(hasPrevious ? "/unfollowers" : "/not-following-back");
+      } catch (e) {
+        setError(e);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [navigate],
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -153,10 +141,6 @@ export default function Upload() {
         </header>
 
         <div className="card card--featured fade-up fade-up--2">
-          <div className="card__kicker">
-            <span className="num">○</span> Drop · <span>.zip</span>
-          </div>
-
           <div {...getRootProps()} className={dropzoneClass}>
             <input {...getInputProps()} />
             {busy ? (
@@ -198,143 +182,26 @@ export default function Upload() {
         </div>
       )}
 
-      {result && (
-        <div className="card card--hero fade-in">
-          <div className="row row--spread row--baseline" style={{ marginBottom: "0.25rem" }}>
-            <div>
-              <div className="card__kicker">
-                <span className="num">#{result.snapshot_id}</span> Captura criada
-              </div>
-              <h2 className="card__title">
-                Registro feito com <em>sucesso</em>.
-              </h2>
-            </div>
-            <Link to="/unfollowers" className="btn btn--ghost">
-              Ver unfollowers <span className="btn__arrow">→</span>
-            </Link>
-          </div>
-
-          <div className="stats">
-            <div className="stat">
-              <div className="stat__label">Seguidores</div>
-              <div className="stat__value">{result.followers.toLocaleString("pt-BR")}</div>
-            </div>
-            <div className="stat">
-              <div className="stat__label">Seguindo</div>
-              <div className="stat__value">{result.following.toLocaleString("pt-BR")}</div>
-            </div>
-            <div className={`stat${result.new_unfollowers.length > 0 ? " stat--accent" : ""}`}>
-              <div className="stat__label">Novos unfollowers</div>
-              <div className="stat__value">{result.new_unfollowers.length}</div>
-            </div>
-          </div>
-
-          {result.previous_snapshot_id == null ? (
-            <p className="muted" style={{ maxWidth: "60ch" }}>
-              Essa é sua primeira captura. Suba outra daqui a alguns dias ou semanas
-              para começar a detectar quem deixou de te seguir.
-            </p>
-          ) : result.new_unfollowers.length === 0 ? (
-            <p className="muted">
-              Ninguém deixou de te seguir desde a captura anterior.
-            </p>
-          ) : (
-            <div className="table-wrap" style={{ marginTop: "0.5rem" }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th style={{ width: "1%" }}>№</th>
-                    <th>Username</th>
-                    <th>Você ainda segue?</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.new_unfollowers.map((u, i) => (
-                    <tr key={u.username}>
-                      <td className="cell--num">
-                        <span className="cell-row-index">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                      </td>
-                      <td>
-                        <UserLink username={u.username} />
-                      </td>
-                      <td>
-                        {u.still_following ? (
-                          <span className="badge badge--good">Ainda sigo</span>
-                        ) : (
-                          <span className="badge badge--muted">Não</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* ──────── COMO FUNCIONA ──────── */}
-      <section id="como-funciona" className="section fade-up fade-up--3">
+      <section
+        id="como-funciona"
+        className="section section--viewport fade-up fade-up--3"
+      >
         <div className="section__head">
           <h2 className="section__title">
             Como <em>funciona</em>
           </h2>
-          <span className="section__sub">3 passos · ~10 minutos</span>
         </div>
 
-        <div className="steps">
-          <article className="step">
-            <span className="step__num">1</span>
-            <div className="step__kicker">No Instagram</div>
-            <h3 className="step__title">Peça seus dados</h3>
-            <p className="step__body">
-              Vá em{" "}
-              <a
-                href="https://accountscenter.instagram.com/info_and_permissions/dyi/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Accounts Center
-              </a>{" "}
-              e peça o download do seu information no formato{" "}
-              <code>JSON</code>. O e-mail demora algumas horas pra chegar.
-            </p>
-          </article>
-
-          <article className="step">
-            <span className="step__num">2</span>
-            <div className="step__kicker">Aqui no app</div>
-            <h3 className="step__title">Solte o .zip</h3>
-            <p className="step__body">
-              Quando o e-mail chegar, baixe o zip e arraste pra cima do
-              dropzone. O app parseia tudo localmente e salva como uma{" "}
-              <strong>captura</strong>.
-            </p>
-          </article>
-
-          <article className="step">
-            <span className="step__num">3</span>
-            <div className="step__kicker">Daqui ~30 dias</div>
-            <h3 className="step__title">Repita o processo</h3>
-            <p className="step__body">
-              Faça uma nova captura a cada 2–4 semanas. A partir da{" "}
-              <strong>segunda</strong>, o app passa a mostrar exatamente quem
-              deixou de te seguir entre uma e outra.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      {/* ──────── DUAS VERIFICAÇÕES ──────── */}
-      <section className="section fade-up fade-up--3">
-        <div className="section__head">
-          <h2 className="section__title">
-            Duas <em>verificações</em>, finalidades diferentes
-          </h2>
-          <span className="section__sub">precisão × abrangência</span>
-        </div>
+        <p className="section__intro">
+          O SeeUnfollowers analisa o export oficial do seu Instagram e cruza
+          duas informações: quem você segue e quem te segue. A partir disso ele
+          faz <strong>duas análises complementares</strong> — uma{" "}
+          <strong>precisa</strong>, que detecta unfollows reais ao longo do
+          tempo, e outra <strong>ampla</strong>, que mostra todo mundo que não
+          te segue de volta — incluindo famosos, marcas e contas grandes que
+          nunca te seguiram.
+        </p>
 
         <div className="checks">
           <article className="check check--primary">
@@ -346,10 +213,11 @@ export default function Upload() {
               Quem deixou de <em>te seguir</em>
             </h3>
             <p className="check__desc">
-              Compara duas capturas e mostra <strong>exatamente</strong> quem
-              parou de te seguir entre elas. É a verificação principal e a razão
-              de existir do app. Destaca quem você ainda segue mas não te segue
-              de volta — esses costumam ser os casos que importam.
+              Compara duas capturas tiradas em momentos diferentes e mostra{" "}
+              <strong>exatamente</strong> quem parou de te seguir entre elas.
+              É a verificação principal e o diferencial do app: nenhuma tool no
+              navegador consegue fazer isso porque elas só veem o estado atual.
+              Aqui você vê o histórico real.
             </p>
             <Link to="/unfollowers" className="check__cta">
               Abrir unfollowers <span>→</span>
@@ -367,12 +235,85 @@ export default function Upload() {
             <p className="check__desc">
               Olha a captura mais recente e lista todo mundo que você segue mas
               não te segue. <strong>Inclui famosos, marcas e contas grandes</strong>{" "}
-              que nunca te seguiram — então é uma lista ruidosa. Útil pra
-              limpeza geral, mas não detecta unfollows.
+              que nunca te seguiram — então é uma lista ampla, com bastante
+              ruído. Útil pra limpeza geral, não pra detectar unfollows.
             </p>
             <Link to="/not-following-back" className="check__cta">
               Abrir verificação <span>→</span>
             </Link>
+          </article>
+        </div>
+
+        <div className="section__scroll-cta-wrap">
+          <a href="#tutorial" className="hero__scroll-cta">
+            <span className="hero__scroll-label">Tutorial completo</span>
+            <span className="hero__scroll-arrow" aria-hidden="true">↓</span>
+          </a>
+        </div>
+      </section>
+
+      {/* ──────── TUTORIAL ──────── */}
+      <section id="tutorial" className="section fade-up fade-up--3">
+        <div className="section__head">
+          <h2 className="section__title">
+            Tutorial <em>completo</em>
+          </h2>
+        </div>
+
+        <div className="steps">
+          <article className="step">
+            <span className="step__num">1</span>
+            <div className="step__kicker">No Instagram</div>
+            <h3 className="step__title">Solicite seus dados</h3>
+            <p className="step__body">
+              Acesse{" "}
+              <a
+                href="https://accountscenter.instagram.com/info_and_permissions/dyi/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Accounts Center → Your information → Download your information
+              </a>
+              . Escolha <strong>Some of your information</strong> e marque
+              apenas <strong>Followers and following</strong> — o app só
+              precisa desses dois. Selecione o formato <code>JSON</code> e
+              confirme o pedido.
+            </p>
+          </article>
+
+          <article className="step">
+            <span className="step__num">2</span>
+            <div className="step__kicker">No e-mail</div>
+            <h3 className="step__title">Aguarde o link</h3>
+            <p className="step__body">
+              O Instagram leva de algumas horas até cerca de um dia pra liberar
+              o export. Quando ficar pronto, chega um e-mail com o link de
+              download — baixe o <strong>.zip</strong> direto pra sua máquina.
+            </p>
+          </article>
+
+          <article className="step">
+            <span className="step__num">3</span>
+            <div className="step__kicker">Aqui no app</div>
+            <h3 className="step__title">Solte o .zip</h3>
+            <p className="step__body">
+              Arraste o arquivo pra cima do dropzone no topo da página. O
+              parsing roda localmente, e o app cria uma{" "}
+              <strong>captura</strong> dos seus seguidores e seguindo naquele
+              momento — guardada no seu navegador.
+            </p>
+          </article>
+
+          <article className="step">
+            <span className="step__num">4</span>
+            <div className="step__kicker">Daqui 2–4 semanas</div>
+            <h3 className="step__title">Repita pra comparar</h3>
+            <p className="step__body">
+              Faça uma nova captura a cada 2–4 semanas. A partir da{" "}
+              <strong>segunda</strong>, o app passa a mostrar exatamente quem
+              deixou de te seguir entre uma captura e outra — essa é a
+              verificação precisa.
+            </p>
           </article>
         </div>
       </section>
@@ -383,7 +324,6 @@ export default function Upload() {
           <h2 className="section__title">
             Por que é <em>seguro</em>
           </h2>
-          <span className="section__sub">comparativo com outras tools</span>
         </div>
 
         <div className="compare-wrap">
@@ -392,10 +332,7 @@ export default function Upload() {
               <tr>
                 <th>Critério</th>
                 <th>
-                  <span className="col-name">Apps com login</span>
-                </th>
-                <th>
-                  <span className="col-name">Tools no navegador</span>
+                  <span className="col-name">Outras ferramentas</span>
                 </th>
                 <th className="col-ours">
                   <span className="col-name">SeeUnfollowers</span>
@@ -406,38 +343,19 @@ export default function Upload() {
               <tr>
                 <td>Pede seu login do Instagram</td>
                 <td>
-                  <span className="compare__no">✕</span>
-                </td>
-                <td>
                   <span className="compare__yes">✓</span>
                 </td>
                 <td className="col-ours">
-                  <span className="compare__yes">✓</span> nunca
+                  <span className="compare__no">✕</span> nunca
                 </td>
               </tr>
               <tr>
                 <td>Onde os dados ficam</td>
                 <td>servidor deles</td>
-                <td>navegador deles</td>
                 <td className="col-ours">sua máquina</td>
               </tr>
               <tr>
-                <td>Detecta unfollows ao longo do tempo</td>
-                <td>
-                  <span className="compare__yes">✓</span>
-                </td>
-                <td>
-                  <span className="compare__no">✕</span>
-                </td>
-                <td className="col-ours">
-                  <span className="compare__yes">✓</span>
-                </td>
-              </tr>
-              <tr>
                 <td>Histórico cronológico de capturas</td>
-                <td>
-                  <span className="compare__no">✕</span>
-                </td>
                 <td>
                   <span className="compare__no">✕</span>
                 </td>
@@ -448,14 +366,7 @@ export default function Upload() {
               <tr>
                 <td>Risco de ban por uso de API</td>
                 <td>alto</td>
-                <td>nenhum</td>
                 <td className="col-ours">nenhum</td>
-              </tr>
-              <tr>
-                <td>Custo</td>
-                <td>grátis ou pago</td>
-                <td>grátis</td>
-                <td className="col-ours">grátis e open</td>
               </tr>
             </tbody>
           </table>
@@ -468,7 +379,6 @@ export default function Upload() {
           <h2 className="section__title">
             Perguntas <em>frequentes</em>
           </h2>
-          <span className="section__sub">{FAQ.length} perguntas</span>
         </div>
 
         <div className="faq">

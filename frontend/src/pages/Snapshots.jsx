@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 
 import { deleteSnapshot, listSnapshots } from "../db.js";
 import ErrorAlert from "../components/ErrorAlert.jsx";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
 
 export default function Snapshots() {
   const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   useEffect(() => {
     listSnapshots()
@@ -17,15 +19,14 @@ export default function Snapshots() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function handleDelete(snap) {
-    const when = new Date(snap.takenAt).toLocaleString("pt-BR");
-    if (!window.confirm(`Apagar a captura #${snap.id} (${when})?\n\nOs dados desta captura serão removidos do seu navegador.`)) {
-      return;
-    }
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    const snap = pendingDelete;
     setDeletingId(snap.id);
     try {
       await deleteSnapshot(snap.id);
       setItems((prev) => prev.filter((s) => s.id !== snap.id));
+      setPendingDelete(null);
     } catch (e) {
       setError(e);
     } finally {
@@ -113,7 +114,7 @@ export default function Snapshots() {
                       <button
                         type="button"
                         className="btn btn--ghost btn--icon btn--danger"
-                        onClick={() => handleDelete(s)}
+                        onClick={() => setPendingDelete(s)}
                         disabled={deletingId === s.id}
                         aria-label={`Apagar captura #${s.id}`}
                         title="Apagar esta captura"
@@ -134,6 +135,25 @@ export default function Snapshots() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        variant="danger"
+        title={pendingDelete ? `Apagar a captura #${pendingDelete.id}?` : ""}
+        message={
+          pendingDelete
+            ? `Tirada em ${new Date(pendingDelete.takenAt).toLocaleString("pt-BR")}.`
+            : ""
+        }
+        hint="Os dados desta captura serão removidos do seu navegador. Esta ação não pode ser desfeita."
+        confirmLabel="Apagar captura"
+        cancelLabel="Cancelar"
+        busy={deletingId !== null}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          if (deletingId === null) setPendingDelete(null);
+        }}
+      />
     </>
   );
 }

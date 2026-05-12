@@ -514,7 +514,14 @@ a:hover { color: var(--accent-deep); }
   font-size: 0.78rem;
   letter-spacing: -0.01em;
   color: var(--muted);
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  max-width: 100%;
 }
+.dropzone__hint-divider { color: var(--muted-2); }
 .dropzone__hint code {
   font-family: var(--font-mono);
   background: var(--surface);
@@ -523,6 +530,9 @@ a:hover { color: var(--accent-deep); }
   border-radius: 5px;
   font-size: 0.74rem;
   color: var(--ink-2);
+  white-space: nowrap;
+  display: inline-block;
+  max-width: 100%;
 }
 
 .dropzone--busy {
@@ -1652,13 +1662,31 @@ td.cell--right { text-align: right; width: 1%; white-space: nowrap; }
 
 @media (max-width: 760px) {
   .nav__inner {
-    padding: 0.85rem 1.25rem;
+    padding: 0.7rem 1.25rem;
     align-items: stretch;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
-  .nav__links { width: 100%; gap: 0; flex-wrap: wrap; }
-  .nav__link { min-height: 44px; padding: 0.7rem 0.85rem; font-size: 0.82rem; }
+  .nav__links {
+    width: 100%;
+    gap: 0.1rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    margin: 0 -1.25rem;
+    padding: 0 1.25rem;
+  }
+  .nav__links::-webkit-scrollbar { display: none; }
+  .nav__link {
+    min-height: 0;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+    gap: 0.35rem;
+    white-space: nowrap;
+  }
+  .nav__link-num { font-size: 0.62rem; }
   .container { padding: 2.2rem 1.25rem 4rem; }
   .card { padding: 1.4rem 1.4rem; }
   .card--hero { padding: 1.55rem 1.4rem; }
@@ -1718,7 +1746,10 @@ td.cell--right { text-align: right; width: 1%; white-space: nowrap; }
 
 @media (max-width: 480px) {
   .container        { padding: 1.5rem 0.85rem 2.5rem; }
-  .nav__inner       { padding: 0.65rem 0.85rem; }
+  .nav__inner       { padding: 0.6rem 0.85rem; gap: 0.45rem; }
+  .nav__links       { margin: 0 -0.85rem; padding: 0 0.85rem; }
+  .nav__link        { padding: 0.38rem 0.55rem; font-size: 0.74rem; }
+  .nav__link-num    { font-size: 0.6rem; }
   .masthead__sub    { display: none; }
   .display          { font-size: clamp(1.85rem, 9vw, 2.4rem); line-height: 1.08; }
   .lede             { font-size: 0.95rem; }

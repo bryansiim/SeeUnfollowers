@@ -163,7 +163,9 @@ export default function Upload() {
                   Arraste o <em>.zip</em> aqui
                 </p>
                 <p className="dropzone__hint">
-                  ou clique para selecionar &nbsp;·&nbsp; <code>instagram-export.zip</code>
+                  <span>ou clique para selecionar</span>
+                  <span className="dropzone__hint-divider" aria-hidden="true">·</span>
+                  <code>instagram-export.zip</code>
                 </p>
               </>
             )}
